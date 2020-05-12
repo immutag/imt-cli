@@ -1,0 +1,17 @@
+[package]
+name = "cli-starter"
+version = "0.1.0"
+authors = ["7db9a"]
+edition = "2018"
+
+[[bin]]
+name = "cli-starter"
+path = "src/bin/main.rs"
+doc = false
+
+[lib]
+name = "cli_starter"
+path = "src/mod.rs"
+
+[dependencies]
+seahorse = "0.7.1"
