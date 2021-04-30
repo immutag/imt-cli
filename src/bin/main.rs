@@ -125,14 +125,16 @@ fn addfile_action(c: &Context) {
             tags = args.next().unwrap();
         }
     }
-    if file != "" {
-        let mut file_path = PathBuf::from(file);
-        file_path = fs::canonicalize(&file_path).expect("failed to full path of file");
-        let filename = file_path.as_path().file_name().unwrap();
-        let stage_path = format!("{}/{}/{}", path_string, "stage", filename.to_owned().to_str().unwrap());
-        fs::copy(file_path.to_str().unwrap(), stage_path).expect("fail to rename file");
-    }
     if let Some(n) = c.string_flag("store-name") {
+        if file != "" {
+            let mut file_path = PathBuf::from(file);
+            file_path = fs::canonicalize(&file_path).expect("failed tr full path of file");
+            let filename = file_path.as_path().file_name().expect("can't get file name");
+            println!("{:#?}", file_path);
+            let stage_path = format!("{}/immutag/{}/{}/{}", path_string, n, "stage", filename.to_owned().to_str().unwrap());
+            println!("{:#?}", stage_path);
+            fs::copy(file_path.to_str().expect("can't convert file path to str"), stage_path).expect("fail to rename file");
+        }
         let status = RunasCommand::new("docker")
             .args(&["run", "-it"])
             .arg("-v")
@@ -146,6 +148,16 @@ fn addfile_action(c: &Context) {
             .status()
             .unwrap();
     } else {
+        if file != "" {
+            let storename = "main";
+            let mut file_path = PathBuf::from(file);
+            file_path = fs::canonicalize(&file_path).expect("failed tr full path of file");
+            let filename = file_path.as_path().file_name().expect("can't get file name");
+            println!("{:#?}", file_path);
+            let stage_path = format!("{}/immutag/{}/{}/{}", path_string, storename, "stage", filename.to_owned().to_str().unwrap());
+            println!("{:#?}", stage_path);
+            fs::copy(file_path.to_str().expect("can't convert file path to str"), stage_path).expect("fail to rename file");
+        }
         let status = RunasCommand::new("docker")
             .args(&["run", "-it"])
             .arg("-v")
