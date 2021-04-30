@@ -1,5 +1,6 @@
 #[macro_use]
 
+extern crate dirs;
 extern crate runas;
 extern crate seahorse;
 extern crate imt_cli;
@@ -7,6 +8,7 @@ extern crate imt_cli;
 use seahorse::{App, Command, Context, Flag, FlagType};
 use runas::{Command as RunasCommand};
 use std::env;
+use std::path::Path;
 use std::process::{Command as StdCmd, Output as StdOutput};
 
 fn main() {
@@ -69,20 +71,21 @@ fn calc_command() -> Command {
 }
 
 fn create_action(c: &Context) {
+    let home_dir = dirs::home_dir().unwrap();
+    let mut path = Path::new(&home_dir);
+    let mut path_string = path.to_str().unwrap().to_string();
+    let docker_mount = format!("{}/{}:/root/immutag", path_string, "immutag");
+    //println!("{:?}", docker_mount);
     let mut mnemonic = "";
     mnemonic = c.args.iter().next().unwrap();
-    println!("{}", mnemonic);
-
-    let output = StdCmd::new("echo")
-        .args(&["ps"])
-        .output()
-        .expect("failed to create store");
-
-    let res = String::from_utf8(output.stdout).unwrap();
-    println!("{}", res);
 
     let status = RunasCommand::new("docker")
-        .arg("ps")
+        .args(&["run", "-it"])
+        .arg("-v")
+        .arg(docker_mount)
+        .arg("immutag:0.0.11")
+        .arg("create")
+        .arg(mnemonic)
         .status()
         .unwrap();
 }
@@ -93,3 +96,8 @@ fn create_command() -> Command {
         .usage("cli create [mnemonic]")
         .action(create_action)
 }
+
+    //sudo docker run -it \
+    //-v "$HOME"/immutag:/root/immutag \
+    //immutag:0.0.11 \
+    //bash
