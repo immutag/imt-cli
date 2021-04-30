@@ -23,7 +23,8 @@ fn main() {
         .flag(Flag::new("age", "cli [name] --age(-a)", FlagType::Int).alias("a"))
         .flag(Flag::new("age", "cli [name] --age(-a)", FlagType::Int).alias("a"))
         .command(calc_command())
-        .command(create_command());
+        .command(create_command())
+        .command(addfile_command());
 
     app.run(args);
 }
@@ -103,6 +104,44 @@ fn create_action(c: &Context) {
     }
 }
 
+fn addfile_action(c: &Context) {
+    let mut args = c.args.iter();
+    let arg_count = args.clone().count();
+    let mut file = "";
+    match arg_count {
+        0 => {
+        },
+        1 => {
+            file = args.next().unwrap();
+        },
+        _ => {
+            file = args.next().unwrap();
+            let mut tags_vec: Vec<String> = vec![];
+            for path in args {
+
+            }
+        }
+    }
+    if let Some(n) = c.string_flag("store-name") {
+        let status = RunasCommand::new("docker")
+            .args(&["run", "-it"])
+            .arg("-v")
+            .arg("immutag:0.0.11")
+            .arg("create")
+            .arg("--store-name")
+            .status()
+            .unwrap();
+    } else {
+        let status = RunasCommand::new("docker")
+            .args(&["run", "-it"])
+            .arg("-v")
+            .arg("immutag:0.0.11")
+            .arg("create")
+            .status()
+            .unwrap();
+    }
+}
+
 fn create_command() -> Command {
     Command::new()
         .name("create")
@@ -112,6 +151,21 @@ fn create_command() -> Command {
             Flag::new(
                 "store-name",
                 "cli create [mnemonic] --store-name(-n) [name]",
+                FlagType::String,
+            )
+            .alias("n"),
+        )
+}
+
+fn addfile_command() -> Command {
+    Command::new()
+        .name("add")
+        .usage("cli add [file] [tags...]")
+        .action(addfile_action)
+        .flag(
+            Flag::new(
+                "store-name",
+                "cli add [file] [tags...]  --store-name(-n) [name]",
                 FlagType::String,
             )
             .alias("n"),
