@@ -7,8 +7,8 @@ extern crate imt_cli;
 
 use seahorse::{App, Command, Context, Flag, FlagType};
 use runas::{Command as RunasCommand};
-use std::env;
-use std::path::Path;
+use std::{env, fs};
+use std::path::{Path, PathBuf};
 use std::process::{Command as StdCmd, Output as StdOutput};
 
 fn main() {
@@ -105,9 +105,15 @@ fn create_action(c: &Context) {
 }
 
 fn addfile_action(c: &Context) {
+    let home_dir = dirs::home_dir().unwrap();
+    let mut path = Path::new(&home_dir);
+    let mut path_string = path.to_str().unwrap().to_string();
+    let docker_mount = format!("{}/{}:/root/immutag", path_string, "immutag");
+
     let mut args = c.args.iter();
     let arg_count = args.clone().count();
     let mut file = "";
+    let mut tags = "";
     match arg_count {
         0 => {
         },
@@ -116,27 +122,36 @@ fn addfile_action(c: &Context) {
         },
         _ => {
             file = args.next().unwrap();
-            let mut tags_vec: Vec<String> = vec![];
-            for path in args {
-
-            }
+            tags = args.next().unwrap();
         }
+    }
+    if file != "" {
+        let mut file_path = PathBuf::from(file);
+        file_path = fs::canonicalize(&file_path).expect("failed to full path of file");
+        fs::rename(file_path.to_str().unwrap(), "test-imt-file").expect("fail to rename file");
     }
     if let Some(n) = c.string_flag("store-name") {
         let status = RunasCommand::new("docker")
             .args(&["run", "-it"])
             .arg("-v")
+            .arg(docker_mount)
             .arg("immutag:0.0.11")
-            .arg("create")
+            .arg("add")
             .arg("--store-name")
+            .arg(n)
+            .arg(file)
+            .arg(tags)
             .status()
             .unwrap();
     } else {
         let status = RunasCommand::new("docker")
             .args(&["run", "-it"])
             .arg("-v")
+            .arg(docker_mount)
             .arg("immutag:0.0.11")
-            .arg("create")
+            .arg("add")
+            .arg(file)
+            .arg(tags)
             .status()
             .unwrap();
     }
@@ -171,8 +186,3 @@ fn addfile_command() -> Command {
             .alias("n"),
         )
 }
-
-    //sudo docker run -it \
-    //-v "$HOME"/immutag:/root/immutag \
-    //immutag:0.0.11 \
-    //bash
