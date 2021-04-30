@@ -4,6 +4,7 @@ extern crate imt_cli;
 
 use seahorse::{App, Command, Context, Flag, FlagType};
 use std::env;
+use std::process::{Command as StdCmd, Output as StdOutput};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -67,7 +68,15 @@ fn calc_command() -> Command {
 fn create_action(c: &Context) {
     let mut mnemonic = "";
     mnemonic = c.args.iter().next().unwrap();
-    println!("{}", mnemonic)
+    println!("{}", mnemonic);
+
+    let output = StdCmd::new("echo")
+        .args(&["ps"])
+        .output()
+        .expect("failed to create store");
+
+    let res = String::from_utf8(output.stdout).unwrap();
+    println!("{}", res);
 }
 
 fn create_command() -> Command {
