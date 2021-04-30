@@ -15,7 +15,9 @@ fn main() {
         .action(default_action)
         .flag(Flag::new("bye", "cli [name] --bye(-b)", FlagType::Bool).alias("b"))
         .flag(Flag::new("age", "cli [name] --age(-a)", FlagType::Int).alias("a"))
-        .command(calc_command());
+        .flag(Flag::new("age", "cli [name] --age(-a)", FlagType::Int).alias("a"))
+        .command(calc_command())
+        .command(create_command());
 
     app.run(args);
 }
@@ -60,4 +62,17 @@ fn calc_command() -> Command {
             )
             .alias("op"),
         )
+}
+
+fn create_action(c: &Context) {
+    let mut mnemonic = "";
+    mnemonic = c.args.iter().next().unwrap();
+    println!("{}", mnemonic)
+}
+
+fn create_command() -> Command {
+    Command::new()
+        .name("create")
+        .usage("cli create [mnemonic]")
+        .action(create_action)
 }
