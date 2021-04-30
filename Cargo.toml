@@ -14,5 +14,6 @@ name = "imt_cli"
 path = "src/mod.rs"
 
 [dependencies]
+dirs = "3.0.2"
 runas = "0.2.1"
 seahorse = "0.7.1"
