@@ -75,19 +75,32 @@ fn create_action(c: &Context) {
     let mut path = Path::new(&home_dir);
     let mut path_string = path.to_str().unwrap().to_string();
     let docker_mount = format!("{}/{}:/root/immutag", path_string, "immutag");
-    //println!("{:?}", docker_mount);
     let mut mnemonic = "";
     mnemonic = c.args.iter().next().unwrap();
 
-    let status = RunasCommand::new("docker")
-        .args(&["run", "-it"])
-        .arg("-v")
-        .arg(docker_mount)
-        .arg("immutag:0.0.11")
-        .arg("create")
-        .arg(mnemonic)
-        .status()
-        .unwrap();
+    if let Some(n) = c.string_flag("store-name") {
+        let status = RunasCommand::new("docker")
+            .args(&["run", "-it"])
+            .arg("-v")
+            .arg(docker_mount)
+            .arg("immutag:0.0.11")
+            .arg("create")
+            .arg("--store-name")
+            .arg(n)
+            .arg(mnemonic)
+            .status()
+            .unwrap();
+    } else {
+        let status = RunasCommand::new("docker")
+            .args(&["run", "-it"])
+            .arg("-v")
+            .arg(docker_mount)
+            .arg("immutag:0.0.11")
+            .arg("create")
+            .arg(mnemonic)
+            .status()
+            .unwrap();
+    }
 }
 
 fn create_command() -> Command {
@@ -95,6 +108,14 @@ fn create_command() -> Command {
         .name("create")
         .usage("cli create [mnemonic]")
         .action(create_action)
+        .flag(
+            Flag::new(
+                "store-name",
+                "cli create [mnemonic] --store-name(-n) [name]",
+                FlagType::String,
+            )
+            .alias("n"),
+        )
 }
 
     //sudo docker run -it \
