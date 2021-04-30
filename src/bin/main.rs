@@ -128,7 +128,9 @@ fn addfile_action(c: &Context) {
     if file != "" {
         let mut file_path = PathBuf::from(file);
         file_path = fs::canonicalize(&file_path).expect("failed to full path of file");
-        fs::rename(file_path.to_str().unwrap(), "test-imt-file").expect("fail to rename file");
+        let filename = file_path.as_path().file_name().unwrap();
+        let stage_path = format!("{}/{}/{}", path_string, "stage", filename.to_owned().to_str().unwrap());
+        fs::rename(file_path.to_str().unwrap(), stage_path).expect("fail to rename file");
     }
     if let Some(n) = c.string_flag("store-name") {
         let status = RunasCommand::new("docker")
