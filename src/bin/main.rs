@@ -1,8 +1,11 @@
 #[macro_use]
+
+extern crate runas;
 extern crate seahorse;
 extern crate imt_cli;
 
 use seahorse::{App, Command, Context, Flag, FlagType};
+use runas::{Command as RunasCommand};
 use std::env;
 use std::process::{Command as StdCmd, Output as StdOutput};
 
@@ -77,6 +80,11 @@ fn create_action(c: &Context) {
 
     let res = String::from_utf8(output.stdout).unwrap();
     println!("{}", res);
+
+    let status = RunasCommand::new("docker")
+        .arg("ps")
+        .status()
+        .unwrap();
 }
 
 fn create_command() -> Command {
