@@ -1,6 +1,6 @@
 #[macro_use]
 extern crate seahorse;
-extern crate cli_starter;
+extern crate imt_cli;
 
 use seahorse::{App, Command, Context, Flag, FlagType};
 use std::env;

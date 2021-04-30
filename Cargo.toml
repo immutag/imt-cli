@@ -1,16 +1,16 @@
 [package]
-name = "cli-starter"
+name = "imt-cli"
 version = "0.1.0"
 authors = ["7db9a"]
 edition = "2018"
 
 [[bin]]
-name = "cli-starter"
+name = "imt-cli"
 path = "src/bin/main.rs"
 doc = false
 
 [lib]
-name = "cli_starter"
+name = "imt_cli"
 path = "src/mod.rs"
 
 [dependencies]
