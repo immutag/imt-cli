@@ -24,7 +24,8 @@ fn main() {
         .flag(Flag::new("age", "cli [name] --age(-a)", FlagType::Int).alias("a"))
         .command(calc_command())
         .command(create_command())
-        .command(addfile_command());
+        .command(addfile_command())
+        .command(find_command());
 
     app.run(args);
 }
@@ -162,6 +163,40 @@ fn addfile_action(c: &Context) {
             .arg(tags)
             .status()
             .unwrap();
+
+    }
+}
+
+fn find_action(c: &Context) {
+    let home_dir = dirs::home_dir().unwrap();
+    let mut path = Path::new(&home_dir);
+    let mut path_string = path.to_str().unwrap().to_string();
+    let docker_mount = format!("{}/{}:/root/immutag", path_string, "immutag");
+    let mut mnemonic = "";
+    mnemonic = c.args.iter().next().unwrap();
+
+    //match
+
+    if let Some(n) = c.string_flag("store-name") {
+        let status = RunasCommand::new("docker")
+            .args(&["run", "-it"])
+            .arg("-v")
+            .arg(docker_mount)
+            .arg("immutag:0.0.11")
+            .arg("find")
+            .arg("--store-name")
+            .arg(n)
+            .status()
+            .unwrap();
+    } else {
+        let status = RunasCommand::new("docker")
+            .args(&["run", "-it"])
+            .arg("-v")
+            .arg(docker_mount)
+            .arg("immutag:0.0.11")
+            .arg("find")
+            .status()
+            .unwrap();
     }
 }
 
@@ -192,5 +227,30 @@ fn addfile_command() -> Command {
                 FlagType::String,
             )
             .alias("n"),
+        )
+}
+
+fn find_command() -> Command {
+    Command::new()
+        .name("find")
+        .usage("cli find")
+        .action(find_action)
+        .flag(
+            Flag::new(
+                "store-name",
+                "cli find --store-name(-n) [name]",
+                FlagType::String,
+            )
+
+            .alias("n"),
+        )
+        .flag(
+            Flag::new(
+                "store-name",
+                "cli find --address(-a)",
+                FlagType::String,
+            )
+
+            .alias("a"),
         )
 }
