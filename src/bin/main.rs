@@ -111,6 +111,8 @@ fn addfile_action(c: &Context) {
     let mut path_string = path.to_str().unwrap().to_string();
     let docker_mount = format!("{}/{}:/root/immutag", path_string, "immutag");
 
+    let mut tags_vec: Vec<String> = vec![];
+
     let mut args = c.args.iter();
     let arg_count = args.clone().count();
     let mut file = "";
@@ -123,7 +125,9 @@ fn addfile_action(c: &Context) {
         },
         _ => {
             file = args.next().unwrap();
-            tags = args.next().unwrap();
+            for tag in args {
+                tags_vec.push(tag.to_string())
+            }
         }
     }
 
@@ -149,7 +153,7 @@ fn addfile_action(c: &Context) {
             .arg("--store-name")
             .arg(n)
             .arg(file)
-            .arg(tags)
+            .args(&tags_vec)
             .status()
             .unwrap();
     } else {
@@ -160,7 +164,7 @@ fn addfile_action(c: &Context) {
             .arg("immutag:0.0.11")
             .arg("add")
             .arg(file)
-            .arg(tags)
+            .args(&tags_vec)
             .status()
             .unwrap();
 
