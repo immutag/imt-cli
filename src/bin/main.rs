@@ -81,7 +81,8 @@ fn create_action(c: &Context) {
     mnemonic = c.args.iter().next().unwrap();
 
     if let Some(n) = c.string_flag("store-name") {
-        let status = RunasCommand::new("docker")
+        StdCmd::new("sudo")
+            .arg("docker")
             .args(&["run", "-it"])
             .arg("-v")
             .arg(docker_mount)
@@ -91,9 +92,11 @@ fn create_action(c: &Context) {
             .arg(n)
             .arg(mnemonic)
             .status()
-            .unwrap();
+            .unwrap()
+            .success();
     } else {
-        let status = RunasCommand::new("docker")
+        StdCmd::new("sudo")
+            .arg("docker")
             .args(&["run", "-it"])
             .arg("-v")
             .arg(docker_mount)
@@ -101,7 +104,8 @@ fn create_action(c: &Context) {
             .arg("create")
             .arg(mnemonic)
             .status()
-            .unwrap();
+            .unwrap()
+            .success();
     }
 }
 
