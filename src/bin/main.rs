@@ -183,13 +183,16 @@ fn find_action(c: &Context) {
     let mut path = Path::new(&home_dir);
     let mut path_string = path.to_str().unwrap().to_string();
     let docker_mount = format!("{}/{}:/root/immutag", path_string, "immutag");
-    let mut mnemonic = "";
-    mnemonic = c.args.iter().next().unwrap();
 
-    //match
+    let mut addr_option = "";
+
+    if c.bool_flag("addr") {
+        addr_option = "--addr";
+    }
 
     if let Some(n) = c.string_flag("store-name") {
-        let status = RunasCommand::new("docker")
+        StdCmd::new("sudo")
+            .arg("docker")
             .args(&["run", "-it"])
             .arg("-v")
             .arg(docker_mount)
@@ -197,17 +200,22 @@ fn find_action(c: &Context) {
             .arg("find")
             .arg("--store-name")
             .arg(n)
+            .arg(addr_option)
             .status()
-            .unwrap();
+            .unwrap()
+            .success();
     } else {
-        let status = RunasCommand::new("docker")
+        StdCmd::new("sudo")
+            .arg("docker")
             .args(&["run", "-it"])
             .arg("-v")
             .arg(docker_mount)
             .arg("immutag:0.0.11")
             .arg("find")
+            .arg(addr_option)
             .status()
-            .unwrap();
+            .unwrap()
+            .success();
     }
 }
 
@@ -257,9 +265,9 @@ fn find_command() -> Command {
         )
         .flag(
             Flag::new(
-                "store-name",
-                "cli find --address(-a)",
-                FlagType::String,
+                "addr",
+                "cli find --addr(-a)",
+                FlagType::Bool,
             )
 
             .alias("a"),
