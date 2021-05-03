@@ -148,7 +148,8 @@ fn addfile_action(c: &Context) {
     }
 
     if let Some(n) = c.string_flag("store-name") {
-        let status = RunasCommand::new("docker")
+        StdCmd::new("sudo")
+            .arg("docker")
             .args(&["run", "-it"])
             .arg("-v")
             .arg(docker_mount)
@@ -159,9 +160,11 @@ fn addfile_action(c: &Context) {
             .arg(file)
             .args(&tags_vec)
             .status()
-            .unwrap();
+            .unwrap()
+            .success();
     } else {
-        let status = RunasCommand::new("docker")
+        StdCmd::new("sudo")
+            .arg("docker")
             .args(&["run", "-it"])
             .arg("-v")
             .arg(docker_mount)
@@ -170,8 +173,8 @@ fn addfile_action(c: &Context) {
             .arg(file)
             .args(&tags_vec)
             .status()
-            .unwrap();
-
+            .unwrap()
+            .success();
     }
 }
 
