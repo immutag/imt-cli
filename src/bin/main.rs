@@ -1,5 +1,6 @@
 #[macro_use]
 
+extern crate cmd_lib;
 extern crate dirs;
 extern crate runas;
 extern crate seahorse;
@@ -178,6 +179,65 @@ fn addfile_action(c: &Context) {
     }
 }
 
+fn updatefile_action(c: &Context) {
+    let home_dir = dirs::home_dir().unwrap();
+    let mut path = Path::new(&home_dir);
+    let mut path_string = path.to_str().unwrap().to_string();
+    let docker_mount = format!("{}/{}:/root/immutag", path_string, "immutag");
+
+    let addr = c.args.iter().next().unwrap();
+    let file = c.args.iter().next().unwrap();
+
+    let mut addr_option = "";
+
+    if c.bool_flag("addr") {
+        addr_option = "--addr";
+    }
+
+    if file != "" {
+        let mut file_path = PathBuf::from(file);
+        file_path = fs::canonicalize(&file_path).expect("failed tr full path of file");
+        let filename = file_path.as_path().file_name().expect("can't get file name");
+        println!("{:#?}", file_path);
+        let stage_path = format!("{}/immutag/{}/{}", path_string, "stage", filename.to_owned().to_str().unwrap());
+        println!("{:#?}", stage_path);
+        fs::copy(file_path.to_str().expect("can't convert file path to str"), stage_path).expect("fail to rename file");
+    } else {
+        panic!("add file: no file given")
+    }
+
+    if let Some(n) = c.string_flag("store-name") {
+        StdCmd::new("sudo")
+            .arg("docker")
+            .args(&["run", "-it"])
+            .arg("-v")
+            .arg(docker_mount)
+            .arg("immutag:0.0.11")
+            .arg("update")
+            .arg("--store-name")
+            .arg(n)
+            .arg(addr)
+            .arg(file)
+            .status()
+            .unwrap()
+            .success();
+    } else {
+        StdCmd::new("sudo")
+            .arg("docker")
+            .args(&["run", "-it"])
+            .arg("-v")
+            .arg(docker_mount)
+            .arg("immutag:0.0.11")
+            .arg("update")
+            .arg(file)
+            .arg(addr)
+            .arg(file)
+            .status()
+            .unwrap()
+            .success();
+    }
+}
+
 fn find_action(c: &Context) {
     let home_dir = dirs::home_dir().unwrap();
     let mut path = Path::new(&home_dir);
@@ -217,6 +277,23 @@ fn find_action(c: &Context) {
             .unwrap()
             .success();
     }
+
+    // Need permissions to write in ~/immutag.
+    let file_link_path = format!("{}/{}/{}", path_string, "immutag", "file");
+    println!("{:?}", file_link_path);
+    let rm_res = fs::remove_file(file_link_path);
+
+    if rm_res.is_ok() {
+        println!("ok");
+
+    cmd_lib::run_fun!(
+        sudo bash -c r#"ln -s $(cat ~/immutag/.find_output | sed "s/\/root\/immutag/\/home\/$(whoami)\/immutag/g") $HOME/immutag/file""#).expect("failed to replace file link");
+    } else {
+        println!("not ok");
+    //cmd_lib::run_fun!(
+    //    sudo bash -c r#"ln -s $(cat ~/immutag/.find_output | sed "s/\/root\/immutag/\/home\/$(whoami)\/immutag/g") $HOME/immutag/file""#).expect("failed to replace file link");
+
+    }
 }
 
 fn create_command() -> Command {
@@ -243,6 +320,21 @@ fn addfile_command() -> Command {
             Flag::new(
                 "store-name",
                 "cli add [file] [tags...]  --store-name(-n) [name]",
+                FlagType::String,
+            )
+            .alias("n"),
+        )
+}
+
+fn updatefile_command() -> Command {
+    Command::new()
+        .name("update")
+        .usage("cli update [addr] [file]")
+        .action(updatefile_action)
+        .flag(
+            Flag::new(
+                "store-name",
+                "cli update [file] [addr] --store-name(-n) [name]",
                 FlagType::String,
             )
             .alias("n"),
