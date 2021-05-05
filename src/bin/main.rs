@@ -291,6 +291,27 @@ fn find_action(c: &Context) {
 
    input.read_to_string(&mut input_buffer).expect("fail read .find_output");
 
+   let mut find_file_path = Path::new(&input_buffer);
+
+   let find_file_path = find_file_path.strip_prefix("/root/").expect("failed to strip /root prefix from .find_output");
+
+  let find_file_pathbuf = path.join(find_file_path);
+
+  let mut f = find_file_pathbuf.to_str().unwrap().to_string();
+  f.pop();
+
+  println!("pathbuf:\n{:?}", f);
+
+   let mut input = std::fs::File::open(&f).expect("failed to open .find_output");
+
+   let mut input_buffer = String::new();
+
+   input.read_to_string(&mut input_buffer).expect("fail read .find_output");
+
+
+  println!("{:?}", input_buffer);
+
+
     // convert into path
     // Drain /root and prepend dir_path
 
