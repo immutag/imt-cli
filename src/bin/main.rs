@@ -302,6 +302,8 @@ fn find_action(c: &Context) {
 
   println!("pathbuf:\n{:?}", f);
 
+  std::os::unix::fs::symlink(&f, path.join("immutag/file")).expect("fail to create file link");
+
    let mut input = std::fs::File::open(&f).expect("failed to open .find_output");
 
    let mut input_buffer = String::new();
