@@ -28,7 +28,8 @@ fn main() {
         .command(create_command())
         .command(addfile_command())
         .command(updatefile_command())
-        .command(find_command());
+        .command(find_command())
+        .command(rollback_command());
 
     app.run(args);
 }
@@ -296,11 +297,10 @@ fn find_action(c: &Context) {
 
     let find_file_pathbuf = path.join(find_file_path);
 
-    //let mut f = find_file_pathbuf.to_str().unwrap().to_string();
-
     let mut f = find_file_pathbuf;
 
     let rm_res = fs::remove_file(path.join("immutag/file"));
+
 
     std::os::unix::fs::symlink(&f, path.join("immutag/file")).expect("fail to create file link");
 
@@ -318,6 +318,39 @@ fn find_action(c: &Context) {
     //    println!("ok");
 
     //}
+}
+
+fn rollback_action(c: &Context) {
+    let home_dir = dirs::home_dir().unwrap();
+    let mut path = Path::new(&home_dir);
+    let mut path_string = path.to_str().unwrap().to_string();
+    let docker_mount = format!("{}/{}:/root/immutag", path_string, "immutag");
+
+    if let Some(n) = c.string_flag("store-name") {
+        StdCmd::new("sudo")
+            .arg("docker")
+            .args(&["run", "-it"])
+            .arg("-v")
+            .arg(docker_mount)
+            .arg("immutag:0.0.11")
+            .arg("rollback")
+            .arg("--store-name")
+            .arg(n)
+            .status()
+            .unwrap()
+            .success();
+    } else {
+        StdCmd::new("sudo")
+            .arg("docker")
+            .args(&["run", "-it"])
+            .arg("-v")
+            .arg(docker_mount)
+            .arg("immutag:0.0.11")
+            .arg("rollback")
+            .status()
+            .unwrap()
+            .success();
+    }
 }
 
 fn create_command() -> Command {
@@ -387,5 +420,20 @@ fn find_command() -> Command {
             )
 
             .alias("a"),
+        )
+}
+
+fn rollback_command() -> Command {
+    Command::new()
+        .name("rollback")
+        .usage("cli rollback")
+        .action(rollback_action)
+        .flag(
+            Flag::new(
+                "store-name",
+                "cli rollback --store-name(-n) [name]",
+                FlagType::String,
+            )
+            .alias("n"),
         )
 }
