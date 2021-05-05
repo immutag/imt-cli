@@ -296,8 +296,9 @@ fn find_action(c: &Context) {
 
     let find_file_pathbuf = path.join(find_file_path);
 
-    let mut f = find_file_pathbuf.to_str().unwrap().to_string();
-    f.pop();
+    //let mut f = find_file_pathbuf.to_str().unwrap().to_string();
+
+    let mut f = find_file_pathbuf;
 
     let rm_res = fs::remove_file(path.join("immutag/file"));
 
