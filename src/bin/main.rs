@@ -281,37 +281,32 @@ fn find_action(c: &Context) {
 
     // Need permissions to write in ~/immutag.
     let output_path = format!("{}/{}/{}", path_string, "immutag", ".find_output");
-    println!("{:?}", output_path);
-    //let rm_res = fs::remove_file(output_path);
 
     // read .find_output
-   let mut input = std::fs::File::open(output_path).expect("failed to open .find_output");
+    let mut input = std::fs::File::open(output_path).expect("failed to open .find_output");
 
-   let mut input_buffer = String::new();
+    let mut input_buffer = String::new();
 
-   input.read_to_string(&mut input_buffer).expect("fail read .find_output");
+    input.read_to_string(&mut input_buffer).expect("fail read .find_output");
 
-   let mut find_file_path = Path::new(&input_buffer);
+    let mut find_file_path = Path::new(&input_buffer);
 
-   let find_file_path = find_file_path.strip_prefix("/root/").expect("failed to strip /root prefix from .find_output");
+    let find_file_path = find_file_path.strip_prefix("/root/").expect("failed to strip /root prefix from .find_output");
 
-  let find_file_pathbuf = path.join(find_file_path);
+    let find_file_pathbuf = path.join(find_file_path);
 
-  let mut f = find_file_pathbuf.to_str().unwrap().to_string();
-  f.pop();
+    let mut f = find_file_pathbuf.to_str().unwrap().to_string();
+    f.pop();
 
-  println!("pathbuf:\n{:?}", f);
+    let rm_res = fs::remove_file(path.join("immutag/file"));
 
-  std::os::unix::fs::symlink(&f, path.join("immutag/file")).expect("fail to create file link");
+    std::os::unix::fs::symlink(&f, path.join("immutag/file")).expect("fail to create file link");
 
-   let mut input = std::fs::File::open(&f).expect("failed to open .find_output");
+    let mut input = std::fs::File::open(&f).expect("failed to open .find_output");
 
-   let mut input_buffer = String::new();
+    let mut input_buffer = String::new();
 
-   input.read_to_string(&mut input_buffer).expect("fail read .find_output");
-
-
-  println!("{:?}", input_buffer);
+    input.read_to_string(&mut input_buffer).expect("fail read .find_output");
 
 
     // convert into path
