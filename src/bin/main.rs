@@ -29,7 +29,8 @@ fn main() {
         .command(addfile_command())
         .command(updatefile_command())
         .command(find_command())
-        .command(rollback_command());
+        .command(rollback_command())
+        .command(rollforward_command());
 
     app.run(args);
 }
@@ -355,6 +356,39 @@ fn rollback_action(c: &Context) {
     }
 }
 
+fn rollforward_action(c: &Context) {
+    let home_dir = dirs::home_dir().unwrap();
+    let mut path = Path::new(&home_dir);
+    let mut path_string = path.to_str().unwrap().to_string();
+    let docker_mount = format!("{}/{}:/root/immutag", path_string, "immutag");
+
+    if let Some(n) = c.string_flag("store-name") {
+        StdCmd::new("sudo")
+            .arg("docker")
+            .args(&["run", "-it"])
+            .arg("-v")
+            .arg(docker_mount)
+            .arg("immutag:0.0.11")
+            .arg("rollforward")
+            .arg("--store-name")
+            .arg(n)
+            .status()
+            .unwrap()
+            .success();
+    } else {
+        StdCmd::new("sudo")
+            .arg("docker")
+            .args(&["run", "-it"])
+            .arg("-v")
+            .arg(docker_mount)
+            .arg("immutag:0.0.11")
+            .arg("rollforward")
+            .status()
+            .unwrap()
+            .success();
+    }
+}
+
 fn create_command() -> Command {
     Command::new()
         .name("create")
@@ -434,6 +468,21 @@ fn rollback_command() -> Command {
             Flag::new(
                 "store-name",
                 "cli rollback --store-name(-n) [name]",
+                FlagType::String,
+            )
+            .alias("n"),
+        )
+}
+
+fn rollforward_command() -> Command {
+    Command::new()
+        .name("rollforward")
+        .usage("cli rollforward")
+        .action(rollforward_action)
+        .flag(
+            Flag::new(
+                "store-name",
+                "cli rollforward --store-name(-n) [name]",
                 FlagType::String,
             )
             .alias("n"),
