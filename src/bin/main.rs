@@ -11,6 +11,7 @@ use runas::{Command as RunasCommand};
 use std::{env, fs};
 use std::path::{Path, PathBuf};
 use std::process::{Command as StdCmd, Output as StdOutput};
+use std::io::prelude::*;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -279,21 +280,24 @@ fn find_action(c: &Context) {
     }
 
     // Need permissions to write in ~/immutag.
-    let file_link_path = format!("{}/{}/{}", path_string, "immutag", "file");
-    println!("{:?}", file_link_path);
-    let rm_res = fs::remove_file(file_link_path);
+    let output_path = format!("{}/{}/{}", path_string, "immutag", ".find_output");
+    println!("{:?}", output_path);
+    //let rm_res = fs::remove_file(output_path);
 
-    if rm_res.is_ok() {
-        println!("ok");
+    // read .find_output
+   let mut input = std::fs::File::open(output_path).expect("failed to open .find_output");
 
-    cmd_lib::run_fun!(
-        sudo bash -c r#"ln -s $(cat ~/immutag/.find_output | sed "s/\/root\/immutag/\/home\/$(whoami)\/immutag/g") $HOME/immutag/file""#).expect("failed to replace file link");
-    } else {
-        println!("not ok");
-    //cmd_lib::run_fun!(
-    //    sudo bash -c r#"ln -s $(cat ~/immutag/.find_output | sed "s/\/root\/immutag/\/home\/$(whoami)\/immutag/g") $HOME/immutag/file""#).expect("failed to replace file link");
+   let mut input_buffer = String::new();
 
-    }
+   input.read_to_string(&mut input_buffer).expect("fail read .find_output");
+
+    // convert into path
+    // Drain /root and prepend dir_path
+
+    //if rm_res.is_ok() {
+    //    println!("ok");
+
+    //}
 }
 
 fn create_command() -> Command {
