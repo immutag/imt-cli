@@ -27,6 +27,7 @@ fn main() {
         .command(calc_command())
         .command(create_command())
         .command(addfile_command())
+        .command(updatefile_command())
         .command(find_command());
 
     app.run(args);
@@ -141,9 +142,7 @@ fn addfile_action(c: &Context) {
         let mut file_path = PathBuf::from(file);
         file_path = fs::canonicalize(&file_path).expect("failed tr full path of file");
         let filename = file_path.as_path().file_name().expect("can't get file name");
-        println!("{:#?}", file_path);
         let stage_path = format!("{}/immutag/{}/{}", path_string, "stage", filename.to_owned().to_str().unwrap());
-        println!("{:#?}", stage_path);
         fs::copy(file_path.to_str().expect("can't convert file path to str"), stage_path).expect("fail to rename file");
     } else {
         panic!("add file: no file given")
@@ -186,14 +185,17 @@ fn updatefile_action(c: &Context) {
     let mut path_string = path.to_str().unwrap().to_string();
     let docker_mount = format!("{}/{}:/root/immutag", path_string, "immutag");
 
-    let addr = c.args.iter().next().unwrap();
-    let file = c.args.iter().next().unwrap();
+    let mut args_iter = c.args.iter();
+    let addr = args_iter.next().unwrap();
+    let file = args_iter.next().unwrap();
 
     let mut addr_option = "";
 
     if c.bool_flag("addr") {
         addr_option = "--addr";
     }
+
+    println!("{:?}", file);
 
     if file != "" {
         let mut file_path = PathBuf::from(file);
@@ -230,7 +232,6 @@ fn updatefile_action(c: &Context) {
             .arg(docker_mount)
             .arg("immutag:0.0.11")
             .arg("update")
-            .arg(file)
             .arg(addr)
             .arg(file)
             .status()
