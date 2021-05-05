@@ -192,20 +192,21 @@ fn updatefile_action(c: &Context) {
 
     let mut addr_option = "";
 
+    let mut stage_filename = std::ffi::OsString::new();
+
     if c.bool_flag("addr") {
         addr_option = "--addr";
     }
 
-    println!("{:?}", file);
-
     if file != "" {
         let mut file_path = PathBuf::from(file);
         file_path = fs::canonicalize(&file_path).expect("failed tr full path of file");
-        let filename = file_path.as_path().file_name().expect("can't get file name");
-        println!("{:#?}", file_path);
+        let filename = file_path.as_path().file_name().expect("can't get file name").to_os_string();
+
         let stage_path = format!("{}/immutag/{}/{}", path_string, "stage", filename.to_owned().to_str().unwrap());
-        println!("{:#?}", stage_path);
         fs::copy(file_path.to_str().expect("can't convert file path to str"), stage_path).expect("fail to rename file");
+
+        stage_filename = file_path.as_path().file_name().expect("can't get file name").to_os_string();
     } else {
         panic!("add file: no file given")
     }
@@ -221,7 +222,7 @@ fn updatefile_action(c: &Context) {
             .arg("--store-name")
             .arg(n)
             .arg(addr)
-            .arg(file)
+            .arg(stage_filename)
             .status()
             .unwrap()
             .success();
@@ -234,7 +235,7 @@ fn updatefile_action(c: &Context) {
             .arg("immutag:0.0.11")
             .arg("update")
             .arg(addr)
-            .arg(file)
+            .arg(stage_filename)
             .status()
             .unwrap()
             .success();
@@ -297,7 +298,8 @@ fn find_action(c: &Context) {
 
     let find_file_pathbuf = path.join(find_file_path);
 
-    let mut f = find_file_pathbuf;
+    let mut f = find_file_pathbuf.to_str().unwrap().to_string();
+    f.pop();
 
     let rm_res = fs::remove_file(path.join("immutag/file"));
 
