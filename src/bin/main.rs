@@ -30,7 +30,9 @@ fn main() {
         .command(updatefile_command())
         .command(find_command())
         .command(rollback_command())
-        .command(rollforward_command());
+        .command(rollforward_command())
+        .command(wormhole_recv_command())
+        .command(wormhole_send_command());
 
     app.run(args);
 }
@@ -418,6 +420,72 @@ fn rollforward_action(c: &Context) {
     }
 }
 
+fn wormhole_recv_action(c: &Context) {
+    let home_dir = dirs::home_dir().unwrap();
+    let mut path = Path::new(&home_dir);
+    let mut path_string = path.to_str().unwrap().to_string();
+    let docker_mount = format!("{}/{}:/root/immutag", path_string, "immutag");
+
+    if let Some(n) = c.string_flag("store-name") {
+        StdCmd::new("sudo")
+            .arg("docker")
+            .args(&["run", "-it"])
+            .arg("-v")
+            .arg(docker_mount)
+            .arg("immutag:0.0.11")
+            .arg("wormhole-recv")
+            .arg("--store-name")
+            .arg(n)
+            .status()
+            .unwrap()
+            .success();
+    } else {
+        StdCmd::new("sudo")
+            .arg("docker")
+            .args(&["run", "-it"])
+            .arg("-v")
+            .arg(docker_mount)
+            .arg("immutag:0.0.11")
+            .arg("wormhole-recv")
+            .status()
+            .unwrap()
+            .success();
+    }
+}
+
+fn wormhole_send_action(c: &Context) {
+    let home_dir = dirs::home_dir().unwrap();
+    let mut path = Path::new(&home_dir);
+    let mut path_string = path.to_str().unwrap().to_string();
+    let docker_mount = format!("{}/{}:/root/immutag", path_string, "immutag");
+
+    if let Some(n) = c.string_flag("store-name") {
+        StdCmd::new("sudo")
+            .arg("docker")
+            .args(&["run", "-it"])
+            .arg("-v")
+            .arg(docker_mount)
+            .arg("immutag:0.0.11")
+            .arg("wormhole-send")
+            .arg("--store-name")
+            .arg(n)
+            .status()
+            .unwrap()
+            .success();
+    } else {
+        StdCmd::new("sudo")
+            .arg("docker")
+            .args(&["run", "-it"])
+            .arg("-v")
+            .arg(docker_mount)
+            .arg("immutag:0.0.11")
+            .arg("wormhole-send")
+            .status()
+            .unwrap()
+            .success();
+    }
+}
+
 fn create_command() -> Command {
     Command::new()
         .name("create")
@@ -512,6 +580,36 @@ fn rollforward_command() -> Command {
             Flag::new(
                 "store-name",
                 "cli rollforward --store-name(-n) [name]",
+                FlagType::String,
+            )
+            .alias("n"),
+        )
+}
+
+fn wormhole_send_command() -> Command {
+    Command::new()
+        .name("wormhole-send")
+        .usage("cli wormhole-send")
+        .action(wormhole_send_action)
+        .flag(
+            Flag::new(
+                "store-name",
+                "cli wormhole-send --store-name(-n) [name]",
+                FlagType::String,
+            )
+            .alias("n"),
+        )
+}
+
+fn wormhole_recv_command() -> Command {
+    Command::new()
+        .name("wormhole-recv")
+        .usage("cli wormhole-recv]")
+        .action(wormhole_recv_action)
+        .flag(
+            Flag::new(
+                "store-name",
+                "cli wormhole-recv --store-name(-n) [name]",
                 FlagType::String,
             )
             .alias("n"),
