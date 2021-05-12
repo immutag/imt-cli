@@ -251,12 +251,55 @@ fn find_action(c: &Context) {
 
     let mut addr_option = "";
 
-    if c.bool_flag("addr") {
-        addr_option = "--addr";
-    }
+    let find_file = |path_string| {
+        // Need permissions to write in ~/immutag.
+        let output_path = format!("{}/{}/{}", path_string, "immutag", ".find_output");
+
+        // read .find_output
+        let mut input = std::fs::File::open(output_path).expect("failed to open .find_output");
+
+        let mut input_buffer = String::new();
+
+        input.read_to_string(&mut input_buffer).expect("fail read .find_output");
+
+        let mut find_file_path = Path::new(&input_buffer);
+
+        let find_file_path = find_file_path.strip_prefix("/root/").expect("failed to strip /root prefix from .find_output");
+
+        let find_file_pathbuf = path.join(find_file_path);
+
+        let mut f = find_file_pathbuf.to_str().unwrap().to_string();
+        f.pop();
+
+        let rm_res = fs::remove_file(path.join("immutag/file"));
+
+
+        std::os::unix::fs::symlink(&f, path.join("immutag/file")).expect("fail to create file link");
+
+        let mut input = std::fs::File::open(&f).expect("failed to open .find_output");
+
+        let mut input_buffer = String::new();
+
+        input.read_to_string(&mut input_buffer).expect("fail read .find_output");
+    };
 
     if let Some(n) = c.string_flag("store-name") {
-        StdCmd::new("sudo")
+        if c.bool_flag("addr") {
+            StdCmd::new("sudo")
+                .arg("docker")
+                .args(&["run", "-it"])
+                .arg("-v")
+                .arg(docker_mount)
+                .arg("immutag:0.0.11")
+                .arg("find")
+                .arg("--store-name")
+                .arg(n)
+                .arg("--addr")
+                .status()
+                .unwrap()
+                .success();
+        } else {
+            StdCmd::new("sudo")
             .arg("docker")
             .args(&["run", "-it"])
             .arg("-v")
@@ -265,54 +308,40 @@ fn find_action(c: &Context) {
             .arg("find")
             .arg("--store-name")
             .arg(n)
-            .arg(addr_option)
             .status()
             .unwrap()
             .success();
+
+            find_file(path_string);
+        }
     } else {
-        StdCmd::new("sudo")
+        if c.bool_flag("addr") {
+            StdCmd::new("sudo")
+                .arg("docker")
+                .args(&["run", "-it"])
+                .arg("-v")
+                .arg(docker_mount)
+                .arg("immutag:0.0.11")
+                .arg("find")
+                .arg("--addr")
+                .status()
+                .unwrap()
+                .success();
+        } else  {
+            StdCmd::new("sudo")
             .arg("docker")
             .args(&["run", "-it"])
             .arg("-v")
             .arg(docker_mount)
             .arg("immutag:0.0.11")
             .arg("find")
-            .arg(addr_option)
             .status()
             .unwrap()
             .success();
+
+            find_file(path_string);
+        }
     }
-
-    // Need permissions to write in ~/immutag.
-    let output_path = format!("{}/{}/{}", path_string, "immutag", ".find_output");
-
-    // read .find_output
-    let mut input = std::fs::File::open(output_path).expect("failed to open .find_output");
-
-    let mut input_buffer = String::new();
-
-    input.read_to_string(&mut input_buffer).expect("fail read .find_output");
-
-    let mut find_file_path = Path::new(&input_buffer);
-
-    let find_file_path = find_file_path.strip_prefix("/root/").expect("failed to strip /root prefix from .find_output");
-
-    let find_file_pathbuf = path.join(find_file_path);
-
-    let mut f = find_file_pathbuf.to_str().unwrap().to_string();
-    f.pop();
-
-    let rm_res = fs::remove_file(path.join("immutag/file"));
-
-
-    std::os::unix::fs::symlink(&f, path.join("immutag/file")).expect("fail to create file link");
-
-    let mut input = std::fs::File::open(&f).expect("failed to open .find_output");
-
-    let mut input_buffer = String::new();
-
-    input.read_to_string(&mut input_buffer).expect("fail read .find_output");
-
 
     // convert into path
     // Drain /root and prepend dir_path
