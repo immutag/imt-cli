@@ -29,7 +29,7 @@ fn main() {
         .command(addfile_command())
         .command(addtag_command())
         .command(rmtags_command())
-        .command(updatefile_command())
+        .command(update_atomicfile_command())
         .command(find_command())
         .command(rollback_command())
         .command(rollforward_command())
@@ -287,7 +287,7 @@ fn rmtags_action(c: &Context) {
     }
 }
 
-fn updatefile_action(c: &Context) {
+fn update_atomicfile_action(c: &Context) {
     let home_dir = dirs::home_dir().unwrap();
     let mut path = Path::new(&home_dir);
     let mut path_string = path.to_str().unwrap().to_string();
@@ -651,15 +651,15 @@ fn rmtags_command() -> Command {
 }
 
 
-fn updatefile_command() -> Command {
+fn update_atomicfile_command() -> Command {
     Command::new()
-        .name("update")
-        .usage("cli update [addr] [file]")
-        .action(updatefile_action)
+        .name("update-atomic")
+        .usage("cli update-atomic [addr] [file]")
+        .action(update_atomicfile_action)
         .flag(
             Flag::new(
                 "store-name",
-                "cli update [file] [addr] --store-name(-n) [name]",
+                "cli update-atomic [file] [addr] --store-name(-n) [name]",
                 FlagType::String,
             )
             .alias("n"),
