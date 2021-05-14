@@ -28,8 +28,9 @@ fn main() {
         .command(create_command())
         .command(addfile_command())
         .command(addtag_command())
-        .command(rmtags_command())
+        .command(rmtags_atomic_command())
         .command(update_atomicfile_command())
+        .command(update_file_command())
         .command(find_command())
         .command(rollback_command())
         .command(rollforward_command())
@@ -246,7 +247,7 @@ fn addtag_action(c: &Context) {
     }
 }
 
-fn rmtags_action(c: &Context) {
+fn rmtags_atomic_action(c: &Context) {
     let home_dir = dirs::home_dir().unwrap();
     let mut path = Path::new(&home_dir);
     let mut path_string = path.to_str().unwrap().to_string();
@@ -317,6 +318,161 @@ fn update_atomicfile_action(c: &Context) {
     } else {
         panic!("add file: no file given")
     }
+
+    if let Some(n) = c.string_flag("store-name") {
+        StdCmd::new("sudo")
+            .arg("docker")
+            .args(&["run", "-it"])
+            .arg("-v")
+            .arg(docker_mount)
+            .arg("immutag:0.0.11")
+            .arg("update")
+            .arg("--store-name")
+            .arg(n)
+            .arg(addr)
+            .arg(stage_filename)
+            .status()
+            .unwrap()
+            .success();
+    } else {
+        StdCmd::new("sudo")
+            .arg("docker")
+            .args(&["run", "-it"])
+            .arg("-v")
+            .arg(docker_mount)
+            .arg("immutag:0.0.11")
+            .arg("update")
+            .arg(addr)
+            .arg(stage_filename)
+            .status()
+            .unwrap()
+            .success();
+    }
+}
+
+fn update_file_action(c: &Context) {
+    //Copy and pasted fn find with some changes in Command.
+
+    let home_dir = dirs::home_dir().unwrap();
+    let mut path = Path::new(&home_dir);
+    let mut path_string = path.to_str().unwrap().to_string();
+    let docker_mount = format!("{}/{}:/root/immutag", path_string, "immutag");
+
+    let mut addr_option = "";
+
+    let find_file = |path_string| {
+        // Need permissions to write in ~/immutag.
+        let output_path = format!("{}/{}/{}", path_string, "immutag", ".find_output");
+
+        // read .find_output
+        let mut input = std::fs::File::open(output_path).expect("failed to open .find_output");
+
+        let mut input_buffer = String::new();
+
+        input.read_to_string(&mut input_buffer).expect("fail read .find_output");
+
+        let mut find_file_path = Path::new(&input_buffer);
+
+        let find_file_path = find_file_path.strip_prefix("/root/").expect("failed to strip /root prefix from .find_output");
+
+        let find_file_pathbuf = path.join(find_file_path);
+
+        let mut f = find_file_pathbuf.to_str().unwrap().to_string();
+        f.pop();
+
+        let rm_res = fs::remove_file(path.join("immutag/file"));
+
+
+        std::os::unix::fs::symlink(&f, path.join("immutag/file")).expect("fail to create file link");
+
+        let mut input = std::fs::File::open(&f).expect("failed to open .find_output");
+
+        let mut input_buffer = String::new();
+
+        input.read_to_string(&mut input_buffer).expect("fail read .find_output");
+    };
+
+    if let Some(n) = c.string_flag("store-name") {
+            StdCmd::new("sudo")
+                .arg("docker")
+                .args(&["run", "-it"])
+                .arg("-v")
+                .arg(docker_mount)
+                .arg("immutag:0.0.11")
+                .arg("find")
+                .arg("--store-name")
+                .arg(n)
+                .arg("--addr")
+                .status()
+                .unwrap()
+                .success();
+
+            find_file(path_string);
+    } else {
+            StdCmd::new("sudo")
+                .arg("docker")
+                .args(&["run", "-it"])
+                .arg("-v")
+                .arg(docker_mount)
+                .arg("immutag:0.0.11")
+                .arg("find")
+                .arg("--addr")
+                .status()
+                .unwrap()
+                .success();
+
+            find_file(path_string);
+    }
+
+    // convert into path
+    // Drain /root and prepend dir_path
+
+    //if rm_res.is_ok() {
+    //    println!("ok");
+
+    //}
+
+
+
+    //Get addr from find results.
+
+
+    let home_dir = dirs::home_dir().unwrap();
+    let mut path = Path::new(&home_dir);
+    let mut path_string = path.to_str().unwrap().to_string();
+    let docker_mount = format!("{}/{}:/root/immutag", path_string, "immutag");
+
+    let mut args_iter = c.args.iter();
+    let file = args_iter.next().unwrap();
+
+    let mut addr_option = "";
+
+    let mut stage_filename = std::ffi::OsString::new();
+
+    if c.bool_flag("addr") {
+        addr_option = "--addr";
+    }
+
+    if file != "" {
+        let mut file_path = PathBuf::from(file);
+        file_path = fs::canonicalize(&file_path).expect("failed tr full path of file");
+        let filename = file_path.as_path().file_name().expect("can't get file name").to_os_string();
+
+        let stage_path = format!("{}/immutag/{}/{}", path_string, "stage", filename.to_owned().to_str().unwrap());
+        fs::copy(file_path.to_str().expect("can't convert file path to str"), stage_path).expect("fail to rename file");
+
+        stage_filename = file_path.as_path().file_name().expect("can't get file name").to_os_string();
+    } else {
+        panic!("add file: no file given")
+    }
+
+    // Need permissions to write in ~/immutag.
+    let output_path = format!("{}/{}/{}", path_string, "immutag", "addr");
+
+    let addr = std::fs::read_to_string(output_path).expect("fail read addr file");
+
+    println!("addr {:?}", addr);
+
 
     if let Some(n) = c.string_flag("store-name") {
         StdCmd::new("sudo")
@@ -635,15 +791,15 @@ fn addtag_command() -> Command {
         )
 }
 
-fn rmtags_command() -> Command {
+fn rmtags_atomic_command() -> Command {
     Command::new()
-        .name("rm-tags")
-        .usage("cli rm-tags [addr]")
-        .action(rmtags_action)
+        .name("rm-tags-atomic")
+        .usage("cli rm-tags-atomic [addr]")
+        .action(rmtags_atomic_action)
         .flag(
             Flag::new(
                 "store-name",
-                "cli rm-tags [addr]  --store-name(-n) [name]",
+                "cli rm-tags-atomic [addr]  --store-name(-n) [name]",
                 FlagType::String,
             )
             .alias("n"),
@@ -660,6 +816,21 @@ fn update_atomicfile_command() -> Command {
             Flag::new(
                 "store-name",
                 "cli update-atomic [file] [addr] --store-name(-n) [name]",
+                FlagType::String,
+            )
+            .alias("n"),
+        )
+}
+
+fn update_file_command() -> Command {
+    Command::new()
+        .name("update")
+        .usage("cli update [addr] [file]")
+        .action(update_file_action)
+        .flag(
+            Flag::new(
+                "store-name",
+                "cli update [file] [addr] --store-name(-n) [name]",
                 FlagType::String,
             )
             .alias("n"),
