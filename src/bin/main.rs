@@ -27,6 +27,7 @@ fn main() {
         .command(calc_command())
         .command(create_command())
         .command(addfile_command())
+        .command(addtag_command())
         .command(updatefile_command())
         .command(find_command())
         .command(rollback_command())
@@ -176,6 +177,67 @@ fn addfile_action(c: &Context) {
             .arg("immutag:0.0.11")
             .arg("add")
             .arg(file)
+            .args(&tags_vec)
+            .status()
+            .unwrap()
+            .success();
+    }
+}
+
+fn addtag_action(c: &Context) {
+    let home_dir = dirs::home_dir().unwrap();
+    let mut path = Path::new(&home_dir);
+    let mut path_string = path.to_str().unwrap().to_string();
+    let docker_mount = format!("{}/{}:/root/immutag", path_string, "immutag");
+
+    let mut tags_vec: Vec<String> = vec![];
+
+    let mut args = c.args.iter();
+    let arg_count = args.clone().count();
+    let mut addr = "";
+    let mut tags = "";
+    match arg_count {
+        0 => {
+        },
+        1 => {
+            addr = args.next().unwrap();
+        },
+        _ => {
+            addr = args.next().unwrap();
+            for tag in args {
+                tags_vec.push(tag.to_string())
+            }
+        }
+    }
+
+    if addr == "" {
+        panic!("Please provide a file address.")
+    }
+
+    if let Some(n) = c.string_flag("store-name") {
+        StdCmd::new("sudo")
+            .arg("docker")
+            .args(&["run", "-it"])
+            .arg("-v")
+            .arg(docker_mount)
+            .arg("immutag:0.0.11")
+            .arg("add-tag")
+            .arg("--store-name")
+            .arg(n)
+            .arg(addr)
+            .args(&tags_vec)
+            .status()
+            .unwrap()
+            .success();
+    } else {
+        StdCmd::new("sudo")
+            .arg("docker")
+            .args(&["run", "-it"])
+            .arg("-v")
+            .arg(docker_mount)
+            .arg("immutag:0.0.11")
+            .arg("add-tag")
+            .arg(addr)
             .args(&tags_vec)
             .status()
             .unwrap()
@@ -510,6 +572,21 @@ fn addfile_command() -> Command {
             Flag::new(
                 "store-name",
                 "cli add [file] [tags...]  --store-name(-n) [name]",
+                FlagType::String,
+            )
+            .alias("n"),
+        )
+}
+
+fn addtag_command() -> Command {
+    Command::new()
+        .name("add-tag")
+        .usage("cli add-tag [addr] [tags...]")
+        .action(addtag_action)
+        .flag(
+            Flag::new(
+                "store-name",
+                "cli add-tag [addr] [tags...]  --store-name(-n) [name]",
                 FlagType::String,
             )
             .alias("n"),
