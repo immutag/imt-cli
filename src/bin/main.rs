@@ -28,6 +28,7 @@ fn main() {
         .command(create_command())
         .command(addfile_command())
         .command(addtag_command())
+        .command(rmtags_command())
         .command(updatefile_command())
         .command(find_command())
         .command(rollback_command())
@@ -239,6 +240,47 @@ fn addtag_action(c: &Context) {
             .arg("add-tag")
             .arg(addr)
             .args(&tags_vec)
+            .status()
+            .unwrap()
+            .success();
+    }
+}
+
+fn rmtags_action(c: &Context) {
+    let home_dir = dirs::home_dir().unwrap();
+    let mut path = Path::new(&home_dir);
+    let mut path_string = path.to_str().unwrap().to_string();
+    let docker_mount = format!("{}/{}:/root/immutag", path_string, "immutag");
+
+    let mut tags_vec: Vec<String> = vec![];
+
+    let mut args = c.args.iter();
+    let arg_count = args.clone().count();
+    let addr = args.next().expect("Please provide file address.");
+
+    if let Some(n) = c.string_flag("store-name") {
+        StdCmd::new("sudo")
+            .arg("docker")
+            .args(&["run", "-it"])
+            .arg("-v")
+            .arg(docker_mount)
+            .arg("immutag:0.0.11")
+            .arg("rm-tags")
+            .arg("--store-name")
+            .arg(n)
+            .arg(addr)
+            .status()
+            .unwrap()
+            .success();
+    } else {
+        StdCmd::new("sudo")
+            .arg("docker")
+            .args(&["run", "-it"])
+            .arg("-v")
+            .arg(docker_mount)
+            .arg("immutag:0.0.11")
+            .arg("rm-tags")
+            .arg(addr)
             .status()
             .unwrap()
             .success();
@@ -592,6 +634,22 @@ fn addtag_command() -> Command {
             .alias("n"),
         )
 }
+
+fn rmtags_command() -> Command {
+    Command::new()
+        .name("rm-tags")
+        .usage("cli rm-tags [addr]")
+        .action(rmtags_action)
+        .flag(
+            Flag::new(
+                "store-name",
+                "cli rm-tags [addr]  --store-name(-n) [name]",
+                FlagType::String,
+            )
+            .alias("n"),
+        )
+}
+
 
 fn updatefile_command() -> Command {
     Command::new()
