@@ -27,7 +27,7 @@ fn main() {
         .command(calc_command())
         .command(create_command())
         .command(addfile_command())
-        .command(addtag_command())
+        .command(addtag_atomic_command())
         .command(rmtags_atomic_command())
         .command(rmtags_command())
         .command(update_atomicfile_command())
@@ -187,7 +187,7 @@ fn addfile_action(c: &Context) {
     }
 }
 
-fn addtag_action(c: &Context) {
+fn addtag_atomic_action(c: &Context) {
     let home_dir = dirs::home_dir().unwrap();
     let mut path = Path::new(&home_dir);
     let mut path_string = path.to_str().unwrap().to_string();
@@ -905,15 +905,15 @@ fn addfile_command() -> Command {
         )
 }
 
-fn addtag_command() -> Command {
+fn addtag_atomic_command() -> Command {
     Command::new()
         .name("add-tag")
-        .usage("cli add-tag [addr] [tags...]")
-        .action(addtag_action)
+        .usage("cli add-tag-atomic [addr] [tags...]")
+        .action(addtag_atomic_action)
         .flag(
             Flag::new(
                 "store-name",
-                "cli add-tag [addr] [tags...]  --store-name(-n) [name]",
+                "cli add-tag-atomic [addr] [tags...]  --store-name(-n) [name]",
                 FlagType::String,
             )
             .alias("n"),
