@@ -282,12 +282,6 @@ fn addtag_action(c: &Context) {
 
 
         std::os::unix::fs::symlink(&f, path.join("immutag/file")).expect("fail to create file link");
-
-        let mut input = std::fs::File::open(&f).expect("failed to open .find_output");
-
-        let mut input_buffer = String::new();
-
-        input.read_to_string(&mut input_buffer).expect("fail read .find_output");
     };
 
     if let Some(n) = c.string_flag("store-name") {
