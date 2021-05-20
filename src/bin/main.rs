@@ -156,6 +156,16 @@ fn addfile_action(c: &Context) {
         panic!("add file: no file given")
     }
 
+	//# Get ipfs addr without adding file to ipfs network.
+    //sudo docker run -it \
+	//-v immutag-ipfs:/data/ipfs \
+	//-v /home/daveamd/immutag:/root/immutag \
+	//ipfs:latest \
+	//add --only-hash "$immutag_path"/"$name"/files/"$addr"
+    let ipfsaddr = "IPFS_ADDRESS";
+
+    //On first run, ipfs may give lots of output on initializing.
+
     if let Some(n) = c.string_flag("store-name") {
         StdCmd::new("sudo")
             .arg("docker")
@@ -167,6 +177,7 @@ fn addfile_action(c: &Context) {
             .arg("--store-name")
             .arg(n)
             .arg(file)
+            .arg(ipfsaddr)
             .args(&tags_vec)
             .status()
             .unwrap()
@@ -180,6 +191,7 @@ fn addfile_action(c: &Context) {
             .arg("immutag:0.0.11")
             .arg("add")
             .arg(file)
+            .arg(ipfsaddr)
             .args(&tags_vec)
             .status()
             .unwrap()
