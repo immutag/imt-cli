@@ -5,9 +5,11 @@ extern crate dirs;
 extern crate runas;
 extern crate seahorse;
 extern crate imt_cli;
+extern crate docker_command;
 
 use seahorse::{App, Command, Context, Flag, FlagType};
 use runas::{Command as RunasCommand};
+use docker_command::{Docker, RunOpt};
 use std::{env, fs};
 use std::path::{Path, PathBuf};
 use std::process::{Command as StdCmd, Output as StdOutput};
@@ -146,12 +148,18 @@ fn addfile_action(c: &Context) {
         }
     }
 
+    let mut stage_path = String::new();
+    let mut file_path = PathBuf::new();
+    //let mut filename = OsStr::new
+    let mut filename_str = "";
     if file != "" {
-        let mut file_path = PathBuf::from(file);
+        file_path = PathBuf::from(file);
         file_path = fs::canonicalize(&file_path).expect("failed tr full path of file");
         let filename = file_path.as_path().file_name().expect("can't get file name");
-        let stage_path = format!("{}/immutag/{}/{}", path_string, "stage", filename.to_owned().to_str().unwrap());
-        fs::copy(file_path.to_str().expect("can't convert file path to str"), stage_path).expect("fail to rename file");
+        stage_path = format!("{}/immutag/{}/{}", path_string, "stage", filename.to_owned().to_str().unwrap());
+        fs::copy(file_path.to_str().expect("can't convert file path to str"), &stage_path).expect("fail to rename file");
+
+        filename_str = filename.to_str().expect("failed to get filename");
     } else {
         panic!("add file: no file given")
     }
@@ -163,6 +171,54 @@ fn addfile_action(c: &Context) {
 	//ipfs:latest \
 	//add --only-hash "$immutag_path"/"$name"/files/"$addr"
     let ipfsaddr = "IPFS_ADDRESS";
+    let data_vol = docker_command::Volume {
+        src: PathBuf::from("immutag-ipfs"),
+        dst: PathBuf::from("/data/ipfs"),
+        read_write: true,
+        ..Default::default()
+    };
+
+    let immutag_path = format!("{}/{}", path_string, "immutag");
+    let host_vol = docker_command::Volume {
+        src: PathBuf::from(immutag_path),
+        dst: PathBuf::from("/root/immutag"),
+        read_write: true,
+        ..Default::default()
+    };
+
+    let mut docker = Docker {
+        sudo: true,
+        ..Default::default()
+    };
+
+    let output = docker
+        .run(RunOpt {
+            image: "ipfs:latest".into(),
+            volumes: vec![data_vol, host_vol],
+            command: Some(Path::new("add").into()),
+            args: vec!["--only-hash".into(), format!("/root/immutag/stage/{}", filename_str).into()],
+            ..Default::default()
+        })
+        .enable_capture()
+        .run().unwrap();;
+    assert_eq!(output.stdout_string_lossy(), "hello world\n");
+
+    let output = StdCmd::new("sudo")
+         .arg("docker")
+         .arg("run")
+         .arg("-it")
+         .arg("-v")
+	     .arg("immutag-ipfs:/data/ipfs")
+         .arg("-v")
+         .arg(&docker_mount)
+	     .arg("ipfs:latest")
+         .arg("add")
+         .arg("--only-hash")
+         .arg(format!("/root/immutag/stage/{}", filename_str))
+         .output()
+         .expect("failed to get ipfs output");
+
+    println!("ipfs output: \n{:?}", output);
 
     //On first run, ipfs may give lots of output on initializing.
 
