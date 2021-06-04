@@ -208,28 +208,9 @@ fn addfile_action(c: &Context) {
     let mut osl_iter = osl_split.iter();
 
     osl_iter.next();
-    let ipfs_addr = osl_iter.next();
+    let ipfsaddr = osl_iter.next();
 
-    //println!("{:#?}", ;
-
-    assert_eq!("foo", *ipfs_addr.unwrap());
-
-    let output = StdCmd::new("sudo")
-         .arg("docker")
-         .arg("run")
-         .arg("-it")
-         .arg("-v")
-	     .arg("immutag-ipfs:/data/ipfs")
-         .arg("-v")
-         .arg(&docker_mount)
-	     .arg("ipfs:latest")
-         .arg("add")
-         .arg("--only-hash")
-         .arg(format!("/root/immutag/stage/{}", filename_str))
-         .output()
-         .expect("failed to get ipfs output");
-
-    println!("ipfs output: \n{:?}", output);
+    //assert_eq!("foo", *ipfs_addr.unwrap());
 
     //On first run, ipfs may give lots of output on initializing.
 
@@ -244,7 +225,7 @@ fn addfile_action(c: &Context) {
             .arg("--store-name")
             .arg(n)
             .arg(file)
-            .arg(ipfsaddr)
+            .arg(ipfsaddr.unwrap())
             .args(&tags_vec)
             .status()
             .unwrap()
@@ -258,7 +239,7 @@ fn addfile_action(c: &Context) {
             .arg("immutag:0.0.11")
             .arg("add")
             .arg(file)
-            .arg(ipfsaddr)
+            .arg(ipfsaddr.unwrap())
             .args(&tags_vec)
             .status()
             .unwrap()
