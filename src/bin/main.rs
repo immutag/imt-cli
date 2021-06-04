@@ -201,7 +201,18 @@ fn addfile_action(c: &Context) {
         })
         .enable_capture()
         .run().unwrap();;
-    assert_eq!(output.stdout_string_lossy(), "hello world\n");
+
+    let output_string_lossy = output.stdout_string_lossy();
+
+    let osl_split: Vec<&str> = output_string_lossy.split(" ").collect();
+    let mut osl_iter = osl_split.iter();
+
+    osl_iter.next();
+    let ipfs_addr = osl_iter.next();
+
+    //println!("{:#?}", ;
+
+    assert_eq!("foo", *ipfs_addr.unwrap());
 
     let output = StdCmd::new("sudo")
          .arg("docker")
